@@ -1,4 +1,4 @@
-# FigureSkatingScoreCalculator
+# Figure Skating Score Calculator
 
 This is a Java Swing-based application that allows users to input and calculate scores for figure skating competitions. The program supports scoring for both **Short Program** and **Free Skate**, following the ISU judging system structure.
 
@@ -24,10 +24,11 @@ This is a Java Swing-based application that allows users to input and calculate 
 3. Choose between **Short** and **Free** program using the radio buttons at the top of the table
 4. Fill out the TES and PCS tables (Click **"Add Row to TES"** or **"Add Row to PCS"** if more elements are needed)
 5. Click **"Save Competition"** to save the scores to the database
-6. View all competition scores in the **Scores By Season** page or compare two competition scores in the **"Compare Scores"** page. 
+6. View all competition scores in the **"Scores By Season"** page or compare two competition scores in the **"Compare Scores"** page. 
 
 ## Author
-** Imani Gomez**
+
+ ** Imani Gomez**
 Graduate Student, Computer Enginnering, NYU
 [Github] (https://github.com/ImaniGomez)
 
