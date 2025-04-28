@@ -41,8 +41,33 @@ public class DatabaseManager {
 							type TEXT, -- 'short' or 'long'
 							total_score REAL, 
 							FOREIGN KEY (competition_id) REFERENCES competitions(id)
-						);							
-					""");
+						);
+						"""							
+					);
+					stmt.execute("""
+						CREATE TABLE IF NOT EXISTS elements (
+							id INTEGER PRIMARY KEY AUTOINCREMENT, 
+							program_id INTEGER NOT NULL, 
+							element TEXT, 
+							bv REAL, 
+							goe REAL, 
+							total REAL, 
+							FOREIGN KEY (program_id) REFERENCES programs(id)
+							);
+						"""
+					);
+					stmt.execute("""
+							CREATE TABLE IF NOT EXISTS components (
+								id INTEGER PRIMARY KEY AUTOINCREMENT,
+								program_id INTEGER NOT NULL,
+								component TEXT, 
+								factor REAL, 
+								mark REAL, 
+								FOREIGN KEY (program_id) REFERENCES programs(id)
+							);
+						"""
+					);
+
 					System.out.println("Tables created successfully");
 				}
 			}

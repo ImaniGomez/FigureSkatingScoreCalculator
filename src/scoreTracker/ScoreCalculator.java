@@ -27,6 +27,11 @@ public class ScoreCalculator extends JPanel {
     private boolean isUpdating = false;
     private JPanel tableContainer;
     private CardLayout tableSwitcher;
+    
+    private double shortProgramTES = 0.0;
+    private double shortProgramPCS = 0.0;
+    private double freeProgramTES = 0.0;
+    private double freeProgramPCS = 0.0;
 
     public ScoreCalculator() {
         setLayout(new BorderLayout());
@@ -154,15 +159,20 @@ public class ScoreCalculator extends JPanel {
         JButton saveButton = new JButton("Save Competition");
   
         saveButton.addActionListener(e -> {
-        	new Thread (new Runnable() {
-        		@Override
-        		public void run() {
-        			System.out.print("Calling in Calculator Class");
-                	String newTitle = titleField.getText();
-                	saveCompetition(newTitle, shortPanel, freePanel, totalScoreLabel.getText());
-        		}
+        	try {
+                String newTitle = titleField.getText();
+                	
+                double shortScore = calculateTES(tesModelShort)[0] + calculatePCSTotal(pcsModelShort);
+                double freeScore = calculateTES(tesModelFree)[0] + calculatePCSTotal(pcsModelFree);
+                double totalScore = shortScore + freeScore;
+                saveCompetition(newTitle, dateField.getText(), shortScore, freeScore, totalScore);
+                
+                JOptionPane.showMessageDialog(ScoreCalculator.this, "Competition saved successfully", "success", JOptionPane.INFORMATION_MESSAGE);
+                
+        	}catch (Exception ex) {
+        		ex.printStackTrace();
+        	}
         	
-        	}).start();
         	
         });
 
@@ -179,20 +189,42 @@ public class ScoreCalculator extends JPanel {
         if (isUpdating) return;
         isUpdating = true;
 
-        DefaultTableModel tesModel = currentSelection.equals("Short") ? tesModelShort : tesModelFree;
-        DefaultTableModel pcsModel = currentSelection.equals("Short") ? pcsModelShort : pcsModelFree;
+        SwingWorker<Void, Void> scoreWorker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                DefaultTableModel tesModel = currentSelection.equals("Short") ? tesModelShort : tesModelFree;
+                DefaultTableModel pcsModel = currentSelection.equals("Short") ? pcsModelShort : pcsModelFree;
 
-        double[] tesScores = calculateTES(tesModel);
-        double totalTES = tesScores[0];
-        double totalPCS = calculatePCSTotal(pcsModel);
-        double overallTotal = totalTES + totalPCS;
+                double[] tesScores = calculateTES(tesModel);
+                double totalTES = tesScores[0];
+                double totalPCS = calculatePCSTotal(pcsModel);
 
-        totalScoreLabel.setText("Total TES Score: " + String.format("%.2f", totalTES));
-        totalPCSLabel.setText("Total PCS Score: " + String.format("%.2f", totalPCS));
-        overallTotalLabel.setText("Overall Total Score: " + String.format("%.2f", overallTotal));
+                // Perform calculations for short or free program based on selection
+                if (currentSelection.equals("Short")) {
+                    shortProgramTES = totalTES;
+                    shortProgramPCS = totalPCS;
+                } else {
+                    freeProgramTES = totalTES;
+                    freeProgramPCS = totalPCS;
+                }
 
-        isUpdating = false;
+                double overallTotal = (shortProgramTES + shortProgramPCS) + (freeProgramTES + freeProgramPCS);
+
+                // Update the UI after calculations
+                SwingUtilities.invokeLater(() -> {
+                    totalScoreLabel.setText("Total TES Score: " + String.format("%.2f", totalTES));
+                    totalPCSLabel.setText("Total PCS Score: " + String.format("%.2f", totalPCS));
+                    overallTotalLabel.setText("Overall Total Score: " + String.format("%.2f", overallTotal));
+                });
+
+                isUpdating = false;
+                return null;
+            }
+        };
+
+        scoreWorker.execute();
     }
+
 
     private double[] calculateTES(DefaultTableModel model) {
         double total = 0.0, bv = 0.0, goe = 0.0;
@@ -221,7 +253,8 @@ public class ScoreCalculator extends JPanel {
             try {
                 double factor = Double.parseDouble(model.getValueAt(row, 1).toString());
                 double mark = Double.parseDouble(model.getValueAt(row, 2).toString());
-                total += factor * mark;
+                total += (factor * mark);
+                System.out.print(total);
             } catch (Exception e) {
                 // ignore
             }
@@ -234,12 +267,13 @@ public class ScoreCalculator extends JPanel {
 
     
     public void saveCompetition(String title, String date, double shortScore, double freeScore, double totalScore) {
+    	System.out.println("Starting Save");
         try (Connection conn = DriverManager.getConnection("jdbc:sqlite:skating_scores.db")) {
             conn.setAutoCommit(false);
 
             // 1. Insert competition and get its ID
             PreparedStatement insertComp = conn.prepareStatement(
-                "INSERT INTO competitions (title, date, total_score) VALUES (?, ?, ?)",
+                "INSERT INTO competitions (name, date, total_score) VALUES (?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS);
             insertComp.setString(1, title);
             insertComp.setString(2, date);
@@ -257,11 +291,14 @@ public class ScoreCalculator extends JPanel {
 
             // 2. Insert short program
             PreparedStatement shortStmt = conn.prepareStatement(
-                "INSERT INTO programs (competition_id, type, total_score) VALUES (?, ?, ?)");
+                "INSERT INTO programs (competition_id, type, total_score) VALUES (?, ?, ?)", 
+                Statement.RETURN_GENERATED_KEYS);
             shortStmt.setInt(1, competitionId);
             shortStmt.setString(2, "short");
             shortStmt.setDouble(3, shortScore);
             shortStmt.executeUpdate();
+            ResultSet shortKeys = shortStmt.getGeneratedKeys();
+            int shortId = shortKeys.next() ? shortKeys.getInt(1) : -1;
 
             // 3. Insert free program
             PreparedStatement freeStmt = conn.prepareStatement(
@@ -270,6 +307,11 @@ public class ScoreCalculator extends JPanel {
             freeStmt.setString(2, "free");
             freeStmt.setDouble(3, freeScore);
             freeStmt.executeUpdate();
+            ResultSet freeKeys = freeStmt.getGeneratedKeys();
+            int freeId = freeKeys.next() ? freeKeys.getInt(1) : -1;
+            
+            saveTESAndPCSData(conn, shortId, tesModelShort, pcsModelShort);
+            saveTESAndPCSData(conn, freeId, tesModelFree, pcsModelFree);
 
             conn.commit();
             System.out.println("Full competition saved successfully.");
@@ -278,37 +320,50 @@ public class ScoreCalculator extends JPanel {
             e.printStackTrace();
         }
     }
+    
+    
+    private void saveTESAndPCSData(Connection conn, int programId, DefaultTableModel tesModel, DefaultTableModel pcsModel) throws SQLException {
+    	PreparedStatement insertElement = conn.prepareStatement(
+    			"INSERT INTO elements (program_id, element, bv, goe, total) VALUES (?, ?, ?, ?, ?)"
+    	);
+    	
+    	for (int i = 0; i < tesModel.getRowCount() - 1; i++) {
+    		insertElement.setInt(1,  programId);
+    		insertElement.setString(2,  tesModel.getValueAt(i,  0).toString());
+    		insertElement.setDouble(3, Double.parseDouble(tesModel.getValueAt(i,  1).toString()));
+    		insertElement.setDouble(4, Double.parseDouble(tesModel.getValueAt(i, 2).toString()));
+    		insertElement.setDouble(5,  Double.parseDouble(tesModel.getValueAt(i,  3).toString()));
+    		insertElement.executeUpdate();
+    		
+    	}
+    	
+    	PreparedStatement insertComponent = conn.prepareStatement(
+    			"INSERT INTO components (program_id, component, factor, mark) VALUES (?, ?, ?, ?)"
+    	);
+    	
+    	for (int i = 0; i < pcsModel.getRowCount() - 1; i++) {
+    		insertComponent.setInt(1, programId);
+    		insertComponent.setString(2,  pcsModel.getValueAt(i,  0).toString());
+    		insertComponent.setDouble(3,  Double.parseDouble(pcsModel.getValueAt(i,  1).toString()));
+    		insertComponent.setDouble(4,  Double.parseDouble(pcsModel.getValueAt(i,  2).toString()));
+    		insertComponent.executeUpdate();
+    	}
+    			
+    }
 
 
     public void printDatabaseSchema() {
         try (Connection conn = DriverManager.getConnection("jdbc:sqlite:skating_scores.db")) {
             PreparedStatement pstmt = conn.prepareStatement("SELECT sql FROM sqlite_master WHERE type='table'");
             var rs = pstmt.executeQuery();
-            System.out.println("----- Current Database Schema -----");
-            while (rs.next()) {
-                String tableDef = rs.getString("sql");
-                System.out.println(tableDef);
-            }
+            
+            System.out.println("----- Starting Calculator -----");
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-    
-    public double getShortScore() {
-        double tes = calculateTES(tesModelShort)[0];
-        double pcs = calculatePCSTotal(pcsModelShort);
-        return tes + pcs;
-    }
+    }  
 
-    public double getFreeScore() {
-        double tes = calculateTES(tesModelFree)[0];
-        double pcs = calculatePCSTotal(pcsModelFree);
-        return tes + pcs;
-    }
-
-    public double getTotalScore() {
-        return getShortScore() + getFreeScore();
-    }
 }
 
 

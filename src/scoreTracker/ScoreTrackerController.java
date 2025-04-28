@@ -48,8 +48,8 @@ public class ScoreTrackerController {
         JPanel navBar = new JPanel();
         navBar.setLayout(new FlowLayout(FlowLayout.LEFT));
         
-        navBar.add(createNavLabel("CompareScores", "Compare"));
-        navBar.add(createNavLabel("Scores by Season", "Season"));
+        navBar.add(createNavLabel("Compare Scores", "Compare"));
+        navBar.add(createNavLabel("All Scores", "Season"));
         navBar.add(createNavLabel(" + New Competition", "NewComp"));
         
         navBar.setBorder(BorderFactory.createMatteBorder(1,0,1,0, Color.LIGHT_GRAY));
@@ -93,37 +93,10 @@ public class ScoreTrackerController {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        /*
-        // Editable title
-        JTextField titleField = new JTextField("New Competition");
-        titleField.setFont(new Font("SansSerif", Font.BOLD, 18));
-        titleField.setMaximumSize(new Dimension(Integer.MAX_VALUE, titleField.getPreferredSize().height));
-        panel.add(titleField);
-        panel.add(Box.createVerticalStrut(10));
-        */
-
         // Score Table Component
         ScoreCalculator scoreTablePanel = new ScoreCalculator();
         panel.add(scoreTablePanel);
         
-        
-        
-        // COMPS BEING SAVED HERE !!!!!!
-        
-        /*
-        JButton saveButton = new JButton("Save Competition");
-        saveButton.addActionListener(e -> {
-        	String newTitle = titleField.getText();
-        	double shortScore = scoreTablePanel.getShortScore();
-        	double freeScore = scoreTablePanel.getFreeScore();
-        	double totalScore = scoreTablePanel.getTotalScore();
-        	System.out.print("Calling saveCompetitionDetails in Controller Class");
-        	saveCompetitionDetails(newTitle, shortScore, freeScore, totalScore);
-        });
-        
-        
-        panel.add(saveButton);
-        */
 
         return panel;
     }
