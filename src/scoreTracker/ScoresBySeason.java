@@ -7,8 +7,11 @@ import java.awt.event.*;
 import java.sql.*;
 
 public class ScoresBySeason extends JPanel {
+	
+	private int accountId;
 
-    public ScoresBySeason() {
+    public ScoresBySeason(int accountId) {
+    	this.accountId = accountId;
         setLayout(new BorderLayout());
 
         JPanel contentPanel = new JPanel();
@@ -17,17 +20,23 @@ public class ScoresBySeason extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(contentPanel);
         add(scrollPane, BorderLayout.CENTER);
+        System.out.println("here");
+        
+        loadAllCompetitions(contentPanel);
 
-        new CompLoader(contentPanel).execute();
     }
 
     private void loadAllCompetitions(JPanel panel) {
+    	System.out.println("entering load all comps");
         String url = "jdbc:sqlite:skating_scores.db";
 
         try (Connection conn = DriverManager.getConnection(url)){
-        	String query = "SELECT id, name, date, short_score, free_score, total_score FROM competitions";
+        	System.out.println("Database connection successful.");
+        	String query = "SELECT id, name, date, short_score, free_score, total_score FROM competitions WHERE account_id=?";
         	PreparedStatement pstmt = conn.prepareStatement(query);
+        	pstmt.setInt(1,  accountId);
             ResultSet rs = pstmt.executeQuery();
+            System.out.println("Account ID from season: " + accountId);
             
             while (rs.next()) {
                 int compId = rs.getInt("id");
@@ -323,15 +332,16 @@ public class ScoresBySeason extends JPanel {
             repaint();
         }
     }
-
+/*
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Scores by Season");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(800, 600);
-            frame.add(new ScoresBySeason());
+            frame.add(new ScoresBySeason(accountId));
             frame.setVisible(true);
         });
     }
+    */
 }
 

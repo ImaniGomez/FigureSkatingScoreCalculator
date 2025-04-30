@@ -15,9 +15,10 @@ public class CompareScores extends JPanel {
 	private JPanel scorePanel2 = new JPanel(new BorderLayout());
 	private HashMap<String, Integer> compNameId = new HashMap<>();
 	private String db = "jdbc:sqlite:skating_scores.db";
-	private int accountId = 1;
+	private int accountId;
 
-	public CompareScores() {
+	public CompareScores(int accountId) {
+		this.accountId = accountId;
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(20, 20, 20, 20));
 		loadCompetitions();
@@ -64,10 +65,11 @@ public class CompareScores extends JPanel {
 		try (Connection conn = DriverManager.getConnection(url)) {
 			String query = """
 						SELECT id AS competition_id, name AS competition_name, date AS competition_date, short_score, free_score, total_score
-						FROM competitions
+						FROM competitions WHERE account_id=?
 					""";
-
+			
 			PreparedStatement pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, accountId);
 			ResultSet rs = pstmt.executeQuery();
 
 			while (rs.next()) {
@@ -147,6 +149,8 @@ public class CompareScores extends JPanel {
         
         JScrollPane scrollWrapper = new JScrollPane(wrapper);
         scrollWrapper.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+       
+
 
         return scrollWrapper;
     }
@@ -235,13 +239,4 @@ public class CompareScores extends JPanel {
 		scorePanel.repaint();
 	}
 
-	public static void main(String[] args) {
-		SwingUtilities.invokeLater(() -> {
-			JFrame frame = new JFrame("Compare Scores");
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			frame.setSize(800, 400);
-			frame.setContentPane(new CompareScores());
-			frame.setVisible(true);
-		});
-	}
 }

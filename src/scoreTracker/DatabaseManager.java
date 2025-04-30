@@ -14,11 +14,13 @@ public class DatabaseManager {
 			if(conn != null) {
 				System.out.println("Database created at: " + dbPath);
 				try(Statement stmt = conn.createStatement()){
+
 					stmt.execute("""
 						CREATE TABLE IF NOT EXISTS accounts(
 							id INTEGER PRIMARY KEY AUTOINCREMENT, 
 							username TEXT UNIQUE, 
-							password TEXT
+							password TEXT, 
+							logged_in BOOLEAN DEFAULT 0
 						);
 					""");
 					
@@ -69,6 +71,7 @@ public class DatabaseManager {
 					);
 
 					System.out.println("Tables created successfully");
+					System.out.println("SELECT * FROM accounts");
 				}
 			}
 			

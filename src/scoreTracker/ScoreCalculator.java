@@ -32,8 +32,13 @@ public class ScoreCalculator extends JPanel {
     private double shortProgramPCS = 0.0;
     private double freeProgramTES = 0.0;
     private double freeProgramPCS = 0.0;
+    
+    private int accountId;
 
-    public ScoreCalculator() {
+    public ScoreCalculator(int accountId) {
+    	this.accountId = accountId;
+    	System.out.println("3");
+    	//this.accountId = fetchAccountId();
         setLayout(new BorderLayout());
         
         JPanel topPanel = new JPanel();
@@ -157,23 +162,31 @@ public class ScoreCalculator extends JPanel {
         });
         
         JButton saveButton = new JButton("Save Competition");
-  
+
         saveButton.addActionListener(e -> {
-        	try {
+            try {
                 String newTitle = titleField.getText();
-                	
+                
                 double shortScore = calculateTES(tesModelShort)[0] + calculatePCSTotal(pcsModelShort);
                 double freeScore = calculateTES(tesModelFree)[0] + calculatePCSTotal(pcsModelFree);
                 double totalScore = shortScore + freeScore;
-                saveCompetition(newTitle, dateField.getText(), shortScore, freeScore, totalScore);
                 
-                JOptionPane.showMessageDialog(ScoreCalculator.this, "Competition saved successfully", "success", JOptionPane.INFORMATION_MESSAGE);
-                
-        	}catch (Exception ex) {
-        		ex.printStackTrace();
-        	}
-        	
-        	
+                System.out.println("Account id from calc: " + accountId);
+
+                // Check if accountId is valid (non-zero)
+                if (accountId == 0) {
+                    JOptionPane.showMessageDialog(ScoreCalculator.this, "Must log in to save competitions", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Save the competition with the valid accountId
+                saveCompetition(newTitle, dateField.getText(), shortScore, freeScore, totalScore, accountId);
+
+                JOptionPane.showMessageDialog(ScoreCalculator.this, "Competition saved successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
 
         
@@ -182,6 +195,11 @@ public class ScoreCalculator extends JPanel {
 
         updateScores();
         printDatabaseSchema();
+    }
+    
+    private int fetchAccountId() {
+        // Simulating fetching the accountId (replace with actual database logic)
+        return accountId;
     }
     
     // TODO: ADD THESE SCORES TO DB???
@@ -266,18 +284,22 @@ public class ScoreCalculator extends JPanel {
     }
 
     
-    public void saveCompetition(String title, String date, double shortScore, double freeScore, double totalScore) {
+    public void saveCompetition(String title, String date, double shortScore, double freeScore, double totalScore, int account_id) {
     	System.out.println("Starting Save");
         try (Connection conn = DriverManager.getConnection("jdbc:sqlite:skating_scores.db")) {
             conn.setAutoCommit(false);
+            System.out.println("Saving with accountId: " + accountId);
 
             // 1. Insert competition and get its ID
             PreparedStatement insertComp = conn.prepareStatement(
-                "INSERT INTO competitions (name, date, total_score) VALUES (?, ?, ?)",
+                "INSERT INTO competitions (name, date, short_score, free_score, total_score, account_id) VALUES (?, ?, ?, ?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS);
             insertComp.setString(1, title);
             insertComp.setString(2, date);
-            insertComp.setDouble(3, totalScore);
+            insertComp.setDouble(3, shortScore);
+            insertComp.setDouble(4,  freeScore);
+            insertComp.setDouble(5, totalScore);
+            insertComp.setInt(6,  account_id);
             insertComp.executeUpdate();
 
             ResultSet keys = insertComp.getGeneratedKeys();
@@ -362,7 +384,9 @@ public class ScoreCalculator extends JPanel {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }  
+    } 
+    
+
 
 }
 
