@@ -46,7 +46,7 @@ The project required the use of 3 'advanced' topics:
 
 ## Author
 
- ** Imani Gomez**
+ **Imani Gomez**
 Graduate Student, Computer Enginnering, NYU
 [Github] (https://github.com/ImaniGomez)
 
