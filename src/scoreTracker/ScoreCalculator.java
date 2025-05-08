@@ -183,6 +183,45 @@ public class ScoreCalculator extends JPanel {
                 saveCompetition(newTitle, dateField.getText(), shortScore, freeScore, totalScore, accountId);
 
                 JOptionPane.showMessageDialog(ScoreCalculator.this, "Competition saved successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+                
+             // --- RESET UI ---
+
+                // Reset Short TES table
+                tesModelShort.setRowCount(0);
+                for (int i = 0; i < 3; i++) tesModelShort.addRow(new Object[]{"", 0.0, 0.0, 0.0});
+                tesModelShort.addRow(new Object[]{"Total", 0.0, 0.0, 0.0});
+
+                // Reset Free TES table
+                tesModelFree.setRowCount(0);
+                for (int i = 0; i < 3; i++) tesModelFree.addRow(new Object[]{"", 0.0, 0.0, 0.0});
+                tesModelFree.addRow(new Object[]{"Total", 0.0, 0.0, 0.0});
+
+                // Reset PCS Short
+                pcsModelShort.setRowCount(0);
+                pcsModelShort.addRow(new Object[]{"Composition", 1.0, 0.0});
+                pcsModelShort.addRow(new Object[]{"Presentation", 1.0, 0.0});
+                pcsModelShort.addRow(new Object[]{"Skating Skills", 1.0, 0.0});
+                pcsModelShort.addRow(new Object[]{"Total", "", 0.0});
+
+                // Reset PCS Free
+                pcsModelFree.setRowCount(0);
+                pcsModelFree.addRow(new Object[]{"Composition", 1.0, 0.0});
+                pcsModelFree.addRow(new Object[]{"Presentation", 1.0, 0.0});
+                pcsModelFree.addRow(new Object[]{"Skating Skills", 1.0, 0.0});
+                pcsModelFree.addRow(new Object[]{"Total", "", 0.0});
+
+                // Reset text fields
+                titleField.setText("New Competition");
+                dateField.setText("2025-04-14");
+
+                // Reset score variables
+                shortProgramTES = 0.0;
+                shortProgramPCS = 0.0;
+                freeProgramTES = 0.0;
+                freeProgramPCS = 0.0;
+
+                updateScores();
+                
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -197,12 +236,7 @@ public class ScoreCalculator extends JPanel {
         printDatabaseSchema();
     }
     
-    private int fetchAccountId() {
-        // Simulating fetching the accountId (replace with actual database logic)
-        return accountId;
-    }
-    
-    // TODO: ADD THESE SCORES TO DB???
+
     public void updateScores() {
         if (isUpdating) return;
         isUpdating = true;
@@ -250,6 +284,8 @@ public class ScoreCalculator extends JPanel {
             try {
                 double bvVal = Double.parseDouble(model.getValueAt(row, 1).toString());
                 double goeVal = Double.parseDouble(model.getValueAt(row, 2).toString());
+                
+                
                 model.setValueAt(String.format("%.2f", bvVal + goeVal), row, 3);
                 bv += bvVal;
                 goe += goeVal;
@@ -337,6 +373,10 @@ public class ScoreCalculator extends JPanel {
 
             conn.commit();
             System.out.println("Full competition saved successfully.");
+            
+            
+            
+            
 
         } catch (SQLException e) {
             e.printStackTrace();

@@ -335,7 +335,7 @@ public class ScoresBySeason extends JPanel {
 /*
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Scores by Season");
+             JFrame frame = new JFrame("Scores by Season");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(800, 600);
             frame.add(new ScoresBySeason(accountId));
